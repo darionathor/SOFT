@@ -1,0 +1,12 @@
+E2 54/2011 Marko Markovic
+file	count
+videos/video-0.avi	0
+videos/video-1.avi	0
+videos/video-2.avi	0
+videos/video-3.avi	0
+videos/video-4.avi	0
+videos/video-5.avi	0
+videos/video-6.avi	0
+videos/video-7.avi	0
+videos/video-8.avi	0
+videos/video-9.avi	0
