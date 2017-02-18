@@ -368,36 +368,39 @@ for num in range(0,10):
 
     for el in elements:
         if el['pass1'] or el['pass2']:
+            tt=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            for br in range(2,7):
+                current=int((br-1)*len(el['history'])/br)-5
+                img = imread('images/frame-{}.png'.format(el['history'][current]['t']))
+                blok_size = (28, 28)
+                blok_center = (int(el['history'][current]['center'][0]), int(el['history'][current]['center'][1]))
+                blok_loc = (blok_center[1] - blok_size[0] / 2, blok_center[0] - blok_size[1] / 2)
 
-            img = imread('images/frame-{}.png'.format(el['history'][4]['t']))
-            blok_size = (28, 28)
-            blok_center = (int(el['history'][4]['center'][0]), int(el['history'][4]['center'][1]))
-            blok_loc = (blok_center[1] - blok_size[0] / 2, blok_center[0] - blok_size[1] / 2)
+                imgB = img[blok_loc[0]:blok_loc[0] + blok_size[0],
+                       blok_loc[1]:blok_loc[1] + blok_size[1],0]
 
-            imgB = img[blok_loc[0]:blok_loc[0] + blok_size[0],
-                   blok_loc[1]:blok_loc[1] + blok_size[1],0]
+               # cv2.circle(img, blok_center, 16, c, 2)
+                #cv2.imshow('frame',img)
+                #print el
+               # print blok_loc
+               # plt.imshow(img)
+               # plt.show()
 
-           # cv2.circle(img, blok_center, 16, c, 2)
-            #cv2.imshow('frame',img)
-            #print el
-           # print blok_loc
-           # plt.imshow(img)
-           # plt.show()
+               # plt.imshow(imgB, cmap="Greys")
+              #  plt.show()
+                #(h, w) = imgB.shape
 
-           # plt.imshow(imgB, cmap="Greys")
-          #  plt.show()
-            #(h, w) = imgB.shape
+                imgB = imgB.reshape(1, 1, 28, 28).astype('float32')
 
-            imgB = imgB.reshape(1, 1, 28, 28).astype('float32')
+                # normalize inputs from 0-255 to 0-1
+                imgB = imgB / 255
 
-            # normalize inputs from 0-255 to 0-1
-            imgB = imgB / 255
-
-            imgB_test = imgB.reshape(784)
-            # print imgB_test
-            imgB_test = imgB_test / 255.
-            # print imgB_test.shape
-            tt = model.predict(imgB, verbose=1)
+                imgB_test = imgB.reshape(784)
+                # print imgB_test
+                imgB_test = imgB_test / 255.
+                # print imgB_test.shape
+                tt += model.predict(imgB, verbose=1)
+            tt=tt/5
             print tt
             result = 0
             answer = np.argmax(tt)
