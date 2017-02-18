@@ -118,12 +118,12 @@ for num in range(0,10):
     t =0
     counter = 0
     times = []
-
+    """
     while not cap.isOpened():
         cap = cv2.VideoCapture("videos/video-3.avi")
         cv2.waitKey(1000)
         print "Wait for the header"
-
+    """
     while (1):
         start_time = time.time()
         ret, img = cap.read()
@@ -174,6 +174,20 @@ for num in range(0,10):
 
         #cv2.erode(img0,kernel)
         #img0 = cv2.dilate(img0, kernel)
+
+
+
+        maxLineGap = 40
+        minLineLength = 15
+        lines = cv2.HoughLinesP(maskl1, 1, np.pi / 180, 100, minLineLength, maxLineGap)
+        #print lines
+        line1[0]=(lines[0][0][0],lines[0][0][1])
+        line1[1]=(lines[0][0][2],lines[0][0][3])
+        lines = cv2.HoughLinesP(maskl2, 1, np.pi / 180, 100, minLineLength, maxLineGap)
+        #print lines
+        line2[0]=(lines[0][0][0],lines[0][0][1])
+        line2[1]=(lines[0][0][2],lines[0][0][3])
+        """
         labeledl1, nr_objectsl1 = ndimage.label(imgl1)
         objectsl1 = ndimage.find_objects(labeledl1)
 
@@ -187,7 +201,7 @@ for num in range(0,10):
         if (nr_objectsl2 > 0):
             line2[0] = (objectsl2[0][1].start, objectsl2[0][0].stop)
             line2[1] = (objectsl2[0][1].stop, objectsl2[0][0].start)
-
+        """
         labeled, nr_objects = ndimage.label(img0)
         objects = ndimage.find_objects(labeled)
         for i in range(nr_objects):
@@ -210,6 +224,7 @@ for num in range(0,10):
                     elem['pass2'] = False
                     elem['history'] = [{'center': (xc, yc), 'size': (dxc, dyc), 't': t}]
                     elem['future'] = []
+                    elem['vector'] = []
                     elements.append(elem)
                 elif nn == 1:
                     lst[0]['center'] = elem['center']
@@ -243,10 +258,10 @@ for num in range(0,10):
                         el['pass1'] = True
                         counter += 1
 
-                cv2.circle(img, el['center'], 16, c, 2)
+                #cv2.circle(img, el['center'], 16, c, 2)
 
                # cv2.line(img, pnt2, el['center'], (0, 255, 25), 1)
-                c = (25, 25, 255)
+                #c = (25, 25, 255)
                 if (dist2 < 9):
                     c = (0, 255, 160)
                     if el['pass2'] == False:
@@ -259,15 +274,21 @@ for num in range(0,10):
                 cv2.putText(img, str(el['id']),
                             (el['center'][0] + 10, el['center'][1] + 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, 255)
+
+                er = []
+                xn = []
                 for hist in el['history']:
+                    er.append(hist['center'][0])
+                    xn.append(hist['center'][1])
                     ttt = t - hist['t']
                     if (ttt < 100):
                         cv2.circle(img, hist['center'], 1, (0, 255, 255), 1)
 
-                for fu in el['future']:
-                    ttt = fu[0] - t
-                    if (ttt < 100):
-                        cv2.circle(img, (fu[1], fu[2]), 1, (255, 255, 0), 1)
+                if (len(er) > 5):
+                    rez=np.polyfit(er,xn,1)
+                    p=np.poly1d(rez)
+                    el['vector']=rez
+                    cv2.line(img, (0, int(p(0))), (640, int(p(640))), (155, 155, 25), 1)
 
         cv2.line(img,line1[0],line1[1],(0,25,255),1)
         cv2.line(img,line2[0],line2[1],(0,25,255),1)
@@ -295,6 +316,56 @@ for num in range(0,10):
     print 'mean %.2f ms' % (np.mean(et))
     # print np.std(et)
     suma=0
+
+
+    def ccw(Ax, Ay, Bx, By, Cx, Cy):
+        return (Cy - Ay) * (Bx - Ax) > (By - Ay) * (Cx - Ax)
+
+
+    # Return true if line segments AB and CD intersect
+    def intersect(Ax, Ay, Bx, By, Cx, Cy, Dx, Dy):
+        return ccw(Ax, Ay, Cx, Cy, Dx, Dy) != ccw(Bx, By, Cx, Cy, Dx, Dy) and ccw(Ax, Ay, Bx, By, Cx, Cy) != ccw(Ax, Ay,
+                                                                                                                 Bx, By,
+                                                                                                                 Dx, Dy)
+
+
+    class Point:
+        def __init__(self, x, y):
+            self.x = x;
+            self.y = y
+
+
+    for el in elements:
+        if not el['pass1'] or not el['pass2']:
+            for el2 in elements:
+                if el['pass1'] != el2['pass1'] or el['pass2'] != el2['pass2']:
+                    if el['history'][-1]['t'] < el2['history'][0]['t']:
+                        # compare vectors
+                        v1 = np.poly1d(el['vector'])
+                        v2 = np.poly1d(el2['vector'])
+                        if abs(v1(0) - v2(0)) <5  and abs(v1(640) - v2(640)) < 10:
+                            el['center'] = el2['center']
+                            el['t'] = el2['t']
+                            for d in el2['history']:
+                                el['history'].append(d)
+                            # el['history'].append(el2['history'])
+                            # A = Point(el['history'][0]['center'][0],el['history'][0]['center'][1]);
+                            # B=Point(el['center'][0],el['center']);
+                            # C=Point(line1[0][0],line1[0][1])
+                            # D=Point(line1[1][0],line1[1][1])
+                            if intersect(el['history'][0]['center'][0], el['history'][0]['center'][1],
+                                         el['center'][0], el['center'][1],
+                                         line1[0][0], line1[0][1], line1[1][0], line1[1][1]):
+                                el['pass1'] = True
+
+                            # D = Point(line2[1][0], line2[1][1])
+                            if intersect(el['history'][0]['center'][0], el['history'][0]['center'][1],
+                                         el['center'][0], el['center'][1],
+                                         line1[0][0], line1[0][1],
+                                         line2[1][0], line2[1][1]):
+                                el['pass2'] = True
+                            print 'vector error correction success'
+
     for el in elements:
         if el['pass1'] or el['pass2']:
 
