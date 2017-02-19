@@ -368,49 +368,57 @@ for num in range(0,10):
 
     for el in elements:
         if el['pass1'] or el['pass2']:
+            x_move=[-1,0,1]
+            y_move = [-1, 0, 1]
             tt=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            for br in range(2,7):
-                current=int((br-1)*len(el['history'])/br)-5
+            for br in range(2,11):
+                current=int((br-1)*len(el['history'])/10)
                 img = imread('images/frame-{}.png'.format(el['history'][current]['t']))
                 blok_size = (28, 28)
                 blok_center = (int(el['history'][current]['center'][0]), int(el['history'][current]['center'][1]))
-                blok_loc = (blok_center[1] - blok_size[0] / 2, blok_center[0] - blok_size[1] / 2)
 
-                imgB = img[blok_loc[0]:blok_loc[0] + blok_size[0],
-                       blok_loc[1]:blok_loc[1] + blok_size[1],0]
+                for movex in x_move:
+                    for movey in y_move:
+                        blok_center2=(blok_center[0]+movex,blok_center[1]+movey)
+                        blok_loc = (blok_center2[1] - blok_size[0] / 2, blok_center2[0] - blok_size[1] / 2)
+                        if(blok_loc[0]<0 or blok_loc[1]<0 or blok_loc[0]>452 or blok_loc[1]>592):
+                            continue
+                        print blok_loc
+                        imgB = img[blok_loc[0]:blok_loc[0] + blok_size[0],
+                               blok_loc[1]:blok_loc[1] + blok_size[1],0]
 
-               # cv2.circle(img, blok_center, 16, c, 2)
-                #cv2.imshow('frame',img)
-                #print el
-               # print blok_loc
-               # plt.imshow(img)
-               # plt.show()
+                       # cv2.circle(img, blok_center, 16, c, 2)
+                        #cv2.imshow('frame',img)
+                        #print el
+                       # print blok_loc
+                       # plt.imshow(img)
+                       # plt.show()
 
-               # plt.imshow(imgB, cmap="Greys")
-              #  plt.show()
-                #(h, w) = imgB.shape
+                       # plt.imshow(imgB, cmap="Greys")
+                      #  plt.show()
+                        #(h, w) = imgB.shape
 
-                imgB = imgB.reshape(1, 1, 28, 28).astype('float32')
+                        imgB = imgB.reshape(1, 1, 28, 28).astype('float32')
 
-                # normalize inputs from 0-255 to 0-1
-                imgB = imgB / 255
+                        # normalize inputs from 0-255 to 0-1
+                        imgB = imgB / 255
 
-                imgB_test = imgB.reshape(784)
-                # print imgB_test
-                imgB_test = imgB_test / 255.
-                # print imgB_test.shape
-                tt += model.predict(imgB, verbose=1)
-            tt=tt/5
+                        imgB_test = imgB.reshape(784)
+                        # print imgB_test
+                        imgB_test = imgB_test / 255.
+                        # print imgB_test.shape
+                        tt += model.predict(imgB, verbose=1)
+            #tt=tt/10
             print tt
             result = 0
             answer = np.argmax(tt)
             print answer
             if(el['pass1']):
-                suma+=answer
-            if(el['pass2']):
                 suma-=answer
+            if(el['pass2']):
+                suma+=answer
     print suma
-    file.write('videos/video-{}.avi\t{}.0\n'.format(num,suma))
+    file.write('video-{}.avi\t{}.0\n'.format(num,suma))
 
 
 
